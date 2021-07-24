@@ -1,0 +1,26 @@
+{
+  "name": "circle-media-backend",
+  "version": "1.0.0",
+  "description": "Backend code for social media app.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ganeshgajula/circle-media-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ganeshgajula/circle-media-backend/issues"
+  },
+  "homepage": "https://github.com/ganeshgajula/circle-media-backend#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
