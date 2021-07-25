@@ -7,6 +7,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the world of Express!!");
 });
 
-app.listen(PORT, () => {
+app.listen(process.env.PORT || PORT, () => {
   console.log(`Server is running at port ${PORT}`);
 });
