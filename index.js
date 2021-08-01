@@ -11,7 +11,28 @@ const PORT = 3000;
 initializeDbConnection();
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the world of Express!!");
+  res.send("Welcome to Circle Media");
+});
+
+/**
+ * 404 Route Handler
+ * Note: Do not move this should be the last route
+ */
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "route not found" });
+});
+
+/**
+ * Error Handler
+ * Note: Do not move
+ */
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: "error occurred, kindly check the error message for more details",
+    errorMessage: err.message,
+  });
 });
 
 app.listen(process.env.PORT || PORT, () => {
