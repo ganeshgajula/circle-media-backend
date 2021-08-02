@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const UserSchema = new mongoose.Schema(
+const UserSchema = new Schema(
   {
     firstname: { type: String, required: "first name is required" },
     lastname: { type: String, required: "last name is required" },
@@ -9,9 +10,9 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: "password is required" },
     avatar: { type: String, default: "" },
     bio: { type: String, default: "" },
-    location: { type: String, default: "" },
+    location: { type: String, default: "IN" },
     link: { type: String, default: "" },
-    joinedOn: { type: String, required: "user joined date is required" },
+    joinedOn: { type: String },
     followers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
