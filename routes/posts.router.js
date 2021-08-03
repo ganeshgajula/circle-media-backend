@@ -197,4 +197,61 @@ router.route("/:userId/:postId/replies").post(async (req, res) => {
   }
 });
 
+router.param("replyId", async (req, res, next, id) => {
+  try {
+    let { requestedPost } = req;
+    const matchedReply = requestedPost.replies.find((reply) => reply._id == id);
+
+    if (!matchedReply) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No reply found with provided id" });
+    }
+
+    req.replyMessage = matchedReply;
+    next();
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message:
+        "Can't fetch reply with given id. Kindly check the error message for more details",
+      errorMessage: error.message,
+    });
+  }
+});
+
+router
+  .route("/:userId/:postId/replies/:replyId")
+  .post(async (req, res) => {
+    try {
+      let { replyMessage, posts } = req;
+      const replyMessageUpdates = req.body;
+      replyMessage = extend(replyMessage, replyMessageUpdates);
+      posts = await posts.save();
+      res.status(200).json({ success: true, posts });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message:
+          "Couldn't update reply message. Kindly check the error message for more details",
+        errorMessage: error.message,
+      });
+    }
+  })
+  .delete(async (req, res) => {
+    try {
+      let { replyMessage, posts } = req;
+      await replyMessage.remove();
+      posts = await posts.save();
+      res.json({ succcess: true, posts });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message:
+          "Couldn't delete reply message. Kindly check the error message for more details",
+        errorMessage: error.message,
+      });
+    }
+  });
+
 module.exports = router;
