@@ -23,13 +23,12 @@ router.route("/signup").post(async (req, res) => {
     return res.status(409).json({
       success: false,
       message:
-        "This email is already registered with us, kindly login with proper credentials",
+        "This email is already registered with us, kindly signup with different credentials.",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        "Couldn't register user, kindly check the error message for more details",
+      message: "username already taken. Please enter a different username",
       errorMessage: error.message,
     });
   }
@@ -104,7 +103,6 @@ router.route("/:email").post(async (req, res) => {
 router.route("/:email/user").get(async (req, res) => {
   try {
     const { user } = req;
-
     res.json({ success: true, user });
   } catch (error) {
     res.status(500).json({

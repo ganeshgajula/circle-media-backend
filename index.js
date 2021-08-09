@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const PORT = 3000;
+const PORT = 4000;
 initializeDbConnection();
 
 app.use("/users", users);
