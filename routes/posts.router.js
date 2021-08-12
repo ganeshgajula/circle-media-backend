@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { extend } = require("lodash");
+const { extend, update } = require("lodash");
 const { Post } = require("../models/post.model");
 const { User } = require("../models/user.model");
 
@@ -94,7 +94,7 @@ router
       res.status(500).json({
         success: false,
         message:
-          "Couldn't add new post, kindly check error message for more details",
+          "Couldn't add new post",
         errorMessage: error.message,
       });
     }
@@ -127,8 +127,10 @@ router
   .route("/:userId/:postId")
   .get(async (req, res) => {
     try {
-      let { requestedPost } = req;
-      res.status(200).json({ success: true, post: requestedPost });
+      let { requestedPost,posts } = req;
+      let updatedPosts = await posts.populate({path:"posts.likedBy posts.retweetedBy",select:"firstname lastname username avatar"}).execPopulate();
+      const userRequestedPost = updatedPosts.posts.filter(post => post._id === requestedPost._id);
+      res.status(200).json({ success: true, post: userRequestedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -170,6 +172,47 @@ router
     }
   });
 
+router.route("/:userId/:postId/likes").post(async(req,res) => {
+  try{
+      let {requestedPost,posts} = req;
+      const likeUpdates = req.body;
+      const isUserPresent = requestedPost.likedBy.find(userId => userId == likeUpdates.userId);
+      !isUserPresent ? requestedPost.likedBy.push(likeUpdates.userId) : requestedPost.likedBy.pop(likeUpdates.userId);
+      let updatedPosts = await posts.save();
+      updatedPosts = await updatedPosts.populate({path:"posts.likedBy",select:"firstname lastname username avatar"}).execPopulate();
+      res.status(200).json({success:true,posts:updatedPosts});
+  } catch(error){
+      res.status(500).json({success:false,message:"Couldn't update post likes. Please try again after some time.",errorMessage:error.message});
+  }
+  })
+
+  router.route("/:userId/:postId/retweets").post(async(req,res) => {
+    try{
+     let {requestedPost,posts} = req;
+     const retweetUpdates = req.body;
+     const isUserPresent = requestedPost.retweetedBy.find(userId => userId == retweetUpdates.userId);
+     !isUserPresent ? requestedPost.retweetedBy.push(retweetUpdates.userId) : requestedPost.retweetedBy.pop(retweetUpdates.userId);
+     let updatedPosts = await posts.save();
+     updatedPosts = await updatedPosts.populate({path:"posts.retweetedBy",select:"firstname lastname username avatar"}).execPopulate();
+     res.status(200).json({success:true,posts:updatedPosts})
+    }catch(error){
+     res.status(500).json({success:false,message:"Couldn't update retweet count. Please try again after some time.",errorMessage:error.message});
+    }
+  }) 
+
+  router.route("/:userId/:postId/bookmarks").post(async(req,res) => {
+    try{
+     let {requestedPost,posts} = req;
+     const bookmarkUpdates = req.body;
+     const isUserPresent = requestedPost.bookmarkedBy.find(userId => userId == bookmarkUpdates.userId);
+     !isUserPresent ? requestedPost.bookmarkedBy.push(bookmarkUpdates.userId) : requestedPost.bookmarkedBy.pop(bookmarkUpdates.userId);
+     posts = await posts.save();
+     res.status(200).json({success:true,requestedPost});
+    }catch(error){
+     res.status(500).json({success:false,message:"Couldn't add to bookmarks. Please try again after some time.",errorMessage:error.message});
+    }
+  }) 
+  
 router.route("/:userId/:postId/replies").post(async (req, res) => {
   try {
     let { requestedPost, posts, user } = req;
