@@ -5,13 +5,24 @@ const { extend } = require("lodash");
 
 router.route("/signup").post(async (req, res) => {
   try {
-    const { firstname, lastname, username, email, password } = req.body;
+    let { firstname, lastname, username, email, password } = req.body;
     const isEmailAlreadyTaken = await User.findOne({ email });
+
+    let initialLetterOfFirstName = firstname.substring(0,1);
+    let remainingLettersOfFirstName = firstname.substring(1);
+    const upperCasedInitialOfFirstName = initialLetterOfFirstName.toUpperCase();
+    const lowerCasedRemainingLettersOfFirstName = remainingLettersOfFirstName.toLowerCase();
+
+
+    let initialLetterOfLastName = lastname.substring(0,1);
+    let remainingLettersOfLastName = lastname.substring(1);
+    const upperCasedInitialOfLastName = initialLetterOfLastName.toUpperCase();
+    const lowerCasedRemainingLettersOfLastName = remainingLettersOfLastName.toLowerCase();
 
     if (!isEmailAlreadyTaken) {
       const newUser = new User({
-        firstname,
-        lastname,
+        firstname: `${upperCasedInitialOfFirstName}${lowerCasedRemainingLettersOfFirstName}`,
+        lastname: `${upperCasedInitialOfLastName}${lowerCasedRemainingLettersOfLastName}`,
         username: username.toLowerCase(),
         email: email.toLowerCase(),
         password,
