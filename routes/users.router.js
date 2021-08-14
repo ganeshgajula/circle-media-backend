@@ -8,16 +8,17 @@ router.route("/signup").post(async (req, res) => {
     let { firstname, lastname, username, email, password } = req.body;
     const isEmailAlreadyTaken = await User.findOne({ email });
 
-    let initialLetterOfFirstName = firstname.substring(0,1);
+    let initialLetterOfFirstName = firstname.substring(0, 1);
     let remainingLettersOfFirstName = firstname.substring(1);
     const upperCasedInitialOfFirstName = initialLetterOfFirstName.toUpperCase();
-    const lowerCasedRemainingLettersOfFirstName = remainingLettersOfFirstName.toLowerCase();
+    const lowerCasedRemainingLettersOfFirstName =
+      remainingLettersOfFirstName.toLowerCase();
 
-
-    let initialLetterOfLastName = lastname.substring(0,1);
+    let initialLetterOfLastName = lastname.substring(0, 1);
     let remainingLettersOfLastName = lastname.substring(1);
     const upperCasedInitialOfLastName = initialLetterOfLastName.toUpperCase();
-    const lowerCasedRemainingLettersOfLastName = remainingLettersOfLastName.toLowerCase();
+    const lowerCasedRemainingLettersOfLastName =
+      remainingLettersOfLastName.toLowerCase();
 
     if (!isEmailAlreadyTaken) {
       const newUser = new User({
@@ -132,8 +133,7 @@ router.route("/").get(async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        "Couldn't get users, kindly check the error message for more details",
+      message: "Couldn't get users at the moment. Please try again.",
       errorMessage: error.message,
     });
   }
