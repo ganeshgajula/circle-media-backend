@@ -13,7 +13,7 @@ const PostSchema = new Schema(
         bookmarkedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
         replies: [
           {
-            userId: { type: Schema.Types.ObjectId, ref: "User" },
+            replierId: { type: Schema.Types.ObjectId, ref: "User" },
             content: String,
             date: String,
           },
