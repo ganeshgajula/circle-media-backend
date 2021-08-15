@@ -75,6 +75,19 @@ router.route("/authenticate").post(async (req, res) => {
   }
 });
 
+router.route("/").get(async (req, res) => {
+  try {
+    const users = await User.find({}).select("-password");
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Couldn't get users at the moment. Please try again.",
+      errorMessage: error.message,
+    });
+  }
+});
+
 router.param("email", async (req, res, next, email) => {
   try {
     const user = await User.findOne({ email }).select("-password");
@@ -95,45 +108,70 @@ router.param("email", async (req, res, next, email) => {
   }
 });
 
-router.route("/:email").post(async (req, res) => {
+router
+  .route("/:email")
+  .get(async (req, res) => {
+    try {
+      const { user } = req;
+      res.json({ success: true, user });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message:
+          "Couldn't find user. Kindly check the error message for more details",
+        errorMessage: error.message,
+      });
+    }
+  })
+  .post(async (req, res) => {
+    try {
+      let { user } = req;
+      const userUpdates = req.body;
+      user = extend(user, userUpdates);
+      const updatedUserDetails = await user.save();
+      res.status(200).json({ success: true, updatedUserDetails });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message:
+          "Couldn't update user details, kindly check the error message for more details",
+        errorMessage: error.message,
+      });
+    }
+  });
+
+router.route("/:email/followunfollow").post(async (req, res) => {
   try {
     let { user } = req;
-    const userUpdates = req.body;
-    user = extend(user, userUpdates);
-    const updatedUserDetails = await user.save();
-    res.status(200).json({ success: true, updatedUserDetails });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message:
-        "Couldn't update user details, kindly check the error message for more details",
-      errorMessage: error.message,
-    });
-  }
-});
+    let userUpdates = req.body;
+    const isFollowedBy = user.followers.find(
+      (userId) => String(userId) === String(userUpdates.userId)
+    );
+    !isFollowedBy
+      ? user.followers.push(userUpdates.userId)
+      : user.followers.pop(userUpdates.userId);
+    let updatedUserDetails = await user.save();
+    console.log("154", updatedUserDetails);
+    // updatedUserDetails = await updatedUserDetails
+    //   .populate("followers")
+    //   .execPopulate();
 
-router.route("/:email/user").get(async (req, res) => {
-  try {
-    const { user } = req;
-    res.json({ success: true, user });
+    let followedByUser = await User.findById(userUpdates.userId);
+    console.log("160", followedByUser);
+    const isFollowing = followedByUser.following.find(
+      (userId) => String(userId) === String(user._id)
+    );
+    console.log("line 163", user.id);
+    console.log("164", isFollowing);
+    !isFollowing
+      ? followedByUser.following.push(user._id)
+      : followedByUser.following.pop(user._id);
+    followedByUser = await followedByUser.save();
+    res.status(200).json({ success: true, updatedUserDetails, followedByUser });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        "Couldn't find user. Kindly check the error message for more details",
-      errorMessage: error.message,
-    });
-  }
-});
-
-router.route("/").get(async (req, res) => {
-  try {
-    const users = await User.find({}).select("-password");
-    res.json({ success: true, users });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Couldn't get users at the moment. Please try again.",
+      message: "Couldn't update followers. Please try again.",
       errorMessage: error.message,
     });
   }
