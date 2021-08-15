@@ -54,7 +54,7 @@ router
       let { posts } = req;
       posts = await posts
         .populate({
-          path: "userId posts.replies.replierId",
+          path: "userId posts.userId posts.replies.replierId",
           select: "firstname lastname username avatar",
         })
         .execPopulate();
@@ -70,10 +70,11 @@ router
   })
   .post(async (req, res) => {
     try {
-      let { posts } = req;
+      let { posts, user } = req;
       const postUpdates = req.body;
 
       posts.posts.push({
+        userId: user._id,
         content: postUpdates.content,
         postDate: new Date().toISOString(),
         likedBy: [],
@@ -85,7 +86,7 @@ router
       let updatedPosts = await posts.save();
       updatedPosts = await updatedPosts
         .populate({
-          path: "userId posts.replies.replierId",
+          path: "posts.userId posts.replies.replierId",
           select: "firstname lastname username avatar",
         })
         .execPopulate();
@@ -129,7 +130,7 @@ router
       let { requestedPost, posts } = req;
       let updatedPosts = await posts
         .populate({
-          path: "posts.likedBy posts.retweetedBy posts.replies.replierId",
+          path: "posts.userId posts.likedBy posts.retweetedBy posts.replies.replierId",
           select: "firstname lastname username avatar",
         })
         .execPopulate();
@@ -182,12 +183,12 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
   try {
     let { requestedPost, posts } = req;
     const likeUpdates = req.body;
-    const isLikedByUser = requestedPost.likedBy.find(
-      (userId) => userId == likeUpdates.likedByUserId
+    const likedByUserIndex = requestedPost.likedBy.findIndex(
+      (userId) => String(userId) === String(likeUpdates.likedByUserId)
     );
-    !isLikedByUser
-      ? requestedPost.likedBy.push(likeUpdates.likedByUserId)
-      : requestedPost.likedBy.pop(likeUpdates.likedByUserId);
+    likedByUserIndex !== -1
+      ? requestedPost.likedBy.splice(likedByUserIndex, 1)
+      : requestedPost.likedBy.push(likeUpdates.likedByUserId);
     let updatedPosts = await posts.save();
     updatedPosts = await updatedPosts
       .populate({
@@ -209,12 +210,12 @@ router.route("/:userId/:postId/retweets").post(async (req, res) => {
   try {
     let { requestedPost, posts } = req;
     const retweetUpdates = req.body;
-    const isRetweetedByUser = requestedPost.retweetedBy.find(
-      (userId) => userId == retweetUpdates.retweetedByUserId
+    const retweetedByUserIndex = requestedPost.retweetedBy.findIndex(
+      (userId) => String(userId) === String(retweetUpdates.retweetedByUserId)
     );
-    !isRetweetedByUser
-      ? requestedPost.retweetedBy.push(retweetUpdates.retweetedByUserId)
-      : requestedPost.retweetedBy.pop(retweetUpdates.retweetedByUserId);
+    retweetedByUserIndex !== -1
+      ? requestedPost.retweetedBy.splice(retweetedByUserIndex, 1)
+      : requestedPost.retweetedBy.push(retweetUpdates.retweetedByUserId);
     let updatedPosts = await posts.save();
     updatedPosts = await updatedPosts
       .populate({
@@ -237,12 +238,12 @@ router.route("/:userId/:postId/bookmarks").post(async (req, res) => {
   try {
     let { requestedPost, posts } = req;
     const bookmarkUpdates = req.body;
-    const isBookmarkedByUser = requestedPost.bookmarkedBy.find(
-      (userId) => userId == bookmarkUpdates.bookmarkedByUserId
+    const bookmarkedByUserIndex = requestedPost.bookmarkedBy.findIndex(
+      (userId) => String(userId) === String(bookmarkUpdates.bookmarkedByUserId)
     );
-    !isBookmarkedByUser
-      ? requestedPost.bookmarkedBy.push(bookmarkUpdates.bookmarkedByUserId)
-      : requestedPost.bookmarkedBy.pop(bookmarkUpdates.bookmarkedByUserId);
+    bookmarkedByUserIndex !== -1
+      ? requestedPost.bookmarkedBy.splice(bookmarkedByUserIndex, 1)
+      : requestedPost.bookmarkedBy.push(bookmarkUpdates.bookmarkedByUserId);
     let updatedPosts = await posts.save();
     updatedPosts = await updatedPosts
       .populate({
@@ -272,7 +273,7 @@ router.route("/:userId/:postId/replies").post(async (req, res) => {
     let updatedPosts = await posts.save();
     updatedPosts = await updatedPosts
       .populate({
-        path: "userId posts.replies.replierId",
+        path: "posts.userId posts.replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
