@@ -150,28 +150,24 @@ router.route("/:email/followunfollow").post(async (req, res) => {
     !isFollowedBy
       ? user.followers.push(userUpdates.userId)
       : user.followers.pop(userUpdates.userId);
-    let updatedUserDetails = await user.save();
-    console.log("154", updatedUserDetails);
-    // updatedUserDetails = await updatedUserDetails
-    //   .populate("followers")
-    //   .execPopulate();
+    let followedToUser = await user.save();
 
     let followedByUser = await User.findById(userUpdates.userId);
-    console.log("160", followedByUser);
+
     const isFollowing = followedByUser.following.find(
       (userId) => String(userId) === String(user._id)
     );
-    console.log("line 163", user.id);
-    console.log("164", isFollowing);
+
     !isFollowing
       ? followedByUser.following.push(user._id)
       : followedByUser.following.pop(user._id);
     followedByUser = await followedByUser.save();
-    res.status(200).json({ success: true, updatedUserDetails, followedByUser });
+    res.status(200).json({ success: true, followedToUser, followedByUser });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Couldn't update followers. Please try again.",
+      message:
+        "Couldn't follow or unfollow user. Please try again after some time.",
       errorMessage: error.message,
     });
   }
