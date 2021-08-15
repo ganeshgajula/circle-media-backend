@@ -144,24 +144,24 @@ router.route("/:email/followunfollow").post(async (req, res) => {
   try {
     let { user } = req;
     let userUpdates = req.body;
-    const isFollowedBy = user.followers.find(
+    const isFollowedByIndex = user.followers.findIndex(
       (userId) => String(userId) === String(userUpdates.userId)
     );
-    !isFollowedBy
-      ? user.followers.push(userUpdates.userId)
-      : user.followers.pop(userUpdates.userId);
-    let followedToUser = await user.save();
+    isFollowedByIndex !== -1
+      ? user.followers.splice(isFollowedByIndex, 1)
+      : user.followers.push(userUpdates.userId);
 
+    let followedToUser = await user.save();
     let followedByUser = await User.findById(userUpdates.userId);
 
-    const isFollowing = followedByUser.following.find(
+    const isFollowingByIndex = followedByUser.following.findIndex(
       (userId) => String(userId) === String(user._id)
     );
-
-    !isFollowing
-      ? followedByUser.following.push(user._id)
-      : followedByUser.following.pop(user._id);
+    isFollowingByIndex !== -1
+      ? followedByUser.following.splice(isFollowingByIndex, 1)
+      : followedByUser.following.push(user._id);
     followedByUser = await followedByUser.save();
+
     res.status(200).json({ success: true, followedToUser, followedByUser });
   } catch (error) {
     res.status(500).json({
