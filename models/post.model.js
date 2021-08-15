@@ -6,6 +6,7 @@ const PostSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     posts: [
       {
+        userId: { type: Schema.Types.ObjectId, ref: "User" },
         content: { type: String, required: "Post content cannot be empty" },
         postDate: String,
         likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
