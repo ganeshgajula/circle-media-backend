@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { extend, update } = require("lodash");
+const { extend } = require("lodash");
 const { Post } = require("../models/post.model");
 const { User } = require("../models/user.model");
 
@@ -141,8 +141,7 @@ router
     } catch (error) {
       res.status(500).json({
         success: false,
-        message:
-          "Couldn't get post. Kindly check the error message for more details",
+        message: "Couldn't access requested post. Please try again.",
         errorMessage: error.message,
       });
     }
@@ -343,5 +342,21 @@ router
       });
     }
   });
+
+router.route("/").get(async (req, res) => {
+  try {
+    let posts = await Post.find({}).populate({
+      path: "posts.userId",
+      select: "firstname lastname username avatar",
+    });
+    res.json({ success: true, posts });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Couldn't fetch posts",
+      errorMessage: error.message,
+    });
+  }
+});
 
 module.exports = router;
