@@ -27,81 +27,31 @@ router.param("userId", async (req, res, next, id) => {
   }
 });
 
-router.param("userId", async (req, res, next, id) => {
-  try {
-    let posts = await Post.findOne({ userId: id });
-    if (!posts) {
-      posts = new Post({ userId: id, posts: [] });
-      posts = await posts.save();
-    }
-
-    req.posts = posts;
-    next();
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message:
-        "Couldn't fetch posts from this user. Kindly check error message for more details.",
-      errorMessage: error.message,
-    });
-  }
-});
-
-router.param("userId", async (req, res, next, id) => {
-  try {
-    let followingUsers = await User.find({ followers: id });
-    let followersDocs = [];
-
-    await Promise.all(
-      followingUsers.map(async (user) => {
-        individualDoc = await Post.find({ userId: user._id });
-        console.log(individualDoc);
-
-        followersDocs.push(individualDoc);
-      })
-    );
-
-    // req.followingPosts = updatedFollowingPosts;
-    // req.following = followingUsers;
-    req.updatedDoc = followersDocs;
-    next();
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message:
-        "Couldn't fetch posts from this user. Kindly check error message for more details.",
-      errorMessage: error.message,
-    });
-  }
-});
-
 router
   .route("/:userId")
   .get(async (req, res) => {
     try {
-      let { posts, updatedDoc } = req;
-      posts = await posts
-        .populate({
-          path: "userId posts.userId posts.replies.replierId",
-          select: "firstname lastname username avatar",
-        })
-        .execPopulate();
-      res.json({ success: true, posts, updatedDoc });
+      let { user } = req;
+      const userPosts = await Post.find({ userId: user._id }).populate({
+        path: "userId",
+        select: "firstname lastname username avatar",
+      });
+      res.json({ success: true, posts: userPosts });
     } catch (error) {
       res.status(500).json({
         success: false,
         message:
-          "Couldn't fetch posts from this user. Kindly check the error message for more details",
+          "Couldn't fetch posts of this user. Kindly check the error message for more details",
         errorMessage: error.message,
       });
     }
   })
   .post(async (req, res) => {
     try {
-      let { posts, user } = req;
+      let { user } = req;
       const postUpdates = req.body;
 
-      posts.posts.push({
+      const newPost = await new Post({
         userId: user._id,
         content: postUpdates.content,
         postDate: new Date().toISOString(),
@@ -111,14 +61,14 @@ router
         replies: [],
       });
 
-      let updatedPosts = await posts.save();
-      updatedPosts = await updatedPosts
+      let savedPost = await newPost.save();
+      savedPost = await savedPost
         .populate({
-          path: "posts.userId posts.replies.replierId",
+          path: "userId replies.replierId",
           select: "firstname lastname username avatar",
         })
         .execPopulate();
-      res.status(200).json({ success: true, posts: updatedPosts });
+      res.status(200).json({ success: true, posts: savedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -128,10 +78,33 @@ router
     }
   });
 
+router.route("/").get(async (req, res) => {
+  try {
+    let posts = await Post.find({}).populate({
+      path: "userId",
+      select: "firstname lastname username avatar",
+    });
+    res.json({ success: true, posts });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Couldn't fetch posts",
+      errorMessage: error.message,
+    });
+  }
+});
+
 router.param("postId", async (req, res, next, id) => {
   try {
-    let { posts } = req;
-    const matchedPost = posts.posts.find((post) => post._id == id);
+    const posts = await Post.find({}).populate({
+      path: "userId",
+      select: "firstname lastname username avatar",
+    });
+
+    const matchedPost = await Post.findById(id).populate({
+      path: "userId",
+      select: "firstname lastname username avatar",
+    });
 
     if (!matchedPost) {
       return res
@@ -139,6 +112,7 @@ router.param("postId", async (req, res, next, id) => {
         .json({ success: false, message: "No posts matched with given id" });
     }
 
+    req.posts = posts;
     req.requestedPost = matchedPost;
     next();
   } catch (error) {
@@ -155,17 +129,8 @@ router
   .route("/:userId/:postId")
   .get(async (req, res) => {
     try {
-      let { requestedPost, posts } = req;
-      let updatedPosts = await posts
-        .populate({
-          path: "posts.userId posts.likedBy posts.retweetedBy posts.replies.replierId",
-          select: "firstname lastname username avatar",
-        })
-        .execPopulate();
-      const userRequestedPost = updatedPosts.posts.find(
-        (post) => post._id === requestedPost._id
-      );
-      res.status(200).json({ success: true, post: userRequestedPost });
+      let { requestedPost } = req;
+      res.status(200).json({ success: true, post: requestedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -176,11 +141,11 @@ router
   })
   .post(async (req, res) => {
     try {
-      let { requestedPost, posts } = req;
+      let { requestedPost } = req;
       const postUpdates = req.body;
       requestedPost = extend(requestedPost, postUpdates);
-      posts = await posts.save();
-      res.status(200).json({ success: true, requestedPost });
+      const updatedPost = await requestedPost.save();
+      res.status(200).json({ success: true, updatedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -192,10 +157,9 @@ router
   })
   .delete(async (req, res) => {
     try {
-      let { requestedPost, posts } = req;
+      let { requestedPost } = req;
       await requestedPost.remove();
-      posts = await posts.save();
-      res.json({ success: true, posts });
+      res.json({ success: true, post: requestedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -208,7 +172,7 @@ router
 
 router.route("/:userId/:postId/likes").post(async (req, res) => {
   try {
-    let { requestedPost, posts } = req;
+    let { requestedPost } = req;
     const likeUpdates = req.body;
     const likedByUserIndex = requestedPost.likedBy.findIndex(
       (userId) => String(userId) === String(likeUpdates.likedByUserId)
@@ -216,14 +180,14 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
     likedByUserIndex !== -1
       ? requestedPost.likedBy.splice(likedByUserIndex, 1)
       : requestedPost.likedBy.push(likeUpdates.likedByUserId);
-    let updatedPosts = await posts.save();
-    updatedPosts = await updatedPosts
+    let likedPost = await requestedPost.save();
+    likedPost = await likedPost
       .populate({
-        path: "posts.userId posts.replies.replierId",
+        path: "replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
-    res.status(200).json({ success: true, posts: updatedPosts });
+    res.status(200).json({ success: true, likedPost });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -235,7 +199,7 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
 
 router.route("/:userId/:postId/retweets").post(async (req, res) => {
   try {
-    let { requestedPost, posts } = req;
+    let { requestedPost } = req;
     const retweetUpdates = req.body;
     const retweetedByUserIndex = requestedPost.retweetedBy.findIndex(
       (userId) => String(userId) === String(retweetUpdates.retweetedByUserId)
@@ -243,14 +207,14 @@ router.route("/:userId/:postId/retweets").post(async (req, res) => {
     retweetedByUserIndex !== -1
       ? requestedPost.retweetedBy.splice(retweetedByUserIndex, 1)
       : requestedPost.retweetedBy.push(retweetUpdates.retweetedByUserId);
-    let updatedPosts = await posts.save();
-    updatedPosts = await updatedPosts
+    let retweetedPost = await requestedPost.save();
+    retweetedPost = await retweetedPost
       .populate({
-        path: "posts.replies.replierId",
+        path: "replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
-    res.status(200).json({ success: true, posts: updatedPosts });
+    res.status(200).json({ success: true, retweetedPost });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -263,7 +227,7 @@ router.route("/:userId/:postId/retweets").post(async (req, res) => {
 
 router.route("/:userId/:postId/bookmarks").post(async (req, res) => {
   try {
-    let { requestedPost, posts } = req;
+    let { requestedPost } = req;
     const bookmarkUpdates = req.body;
     const bookmarkedByUserIndex = requestedPost.bookmarkedBy.findIndex(
       (userId) => String(userId) === String(bookmarkUpdates.bookmarkedByUserId)
@@ -271,14 +235,14 @@ router.route("/:userId/:postId/bookmarks").post(async (req, res) => {
     bookmarkedByUserIndex !== -1
       ? requestedPost.bookmarkedBy.splice(bookmarkedByUserIndex, 1)
       : requestedPost.bookmarkedBy.push(bookmarkUpdates.bookmarkedByUserId);
-    let updatedPosts = await posts.save();
-    updatedPosts = await updatedPosts
+    let bookmarkedPost = await requestedPost.save();
+    bookmarkedPost = await bookmarkedPost
       .populate({
-        path: "posts.replies.replierId",
+        path: "replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
-    res.status(200).json({ success: true, posts: updatedPosts });
+    res.status(200).json({ success: true, bookmarkedPost });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -290,21 +254,21 @@ router.route("/:userId/:postId/bookmarks").post(async (req, res) => {
 
 router.route("/:userId/:postId/replies").post(async (req, res) => {
   try {
-    let { requestedPost, posts } = req;
+    let { requestedPost } = req;
     let newReply = req.body;
-    requestedPost = requestedPost.replies.push({
+    requestedPost.replies.push({
       replierId: newReply.replierId,
       content: newReply.message,
       date: new Date().toISOString(),
     });
-    let updatedPosts = await posts.save();
-    updatedPosts = await updatedPosts
+    let repliedToPost = await requestedPost.save();
+    repliedToPost = await repliedToPost
       .populate({
-        path: "posts.userId posts.replies.replierId",
+        path: "userId replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
-    res.status(201).json({ success: true, posts: updatedPosts });
+    res.status(201).json({ success: true, repliedToPost });
   } catch (error) {
     res.status(500).json({
       success: true,
@@ -341,11 +305,11 @@ router
   .route("/:userId/:postId/replies/:replyId")
   .post(async (req, res) => {
     try {
-      let { replyMessage, posts } = req;
+      let { replyMessage, requestedPost } = req;
       const replyMessageUpdates = req.body;
       replyMessage = extend(replyMessage, replyMessageUpdates);
-      await posts.save();
-      res.status(200).json({ success: true, posts });
+      let postAfterReplyUpdate = await requestedPost.save();
+      res.status(200).json({ success: true, postAfterReplyUpdate });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -357,10 +321,10 @@ router
   })
   .delete(async (req, res) => {
     try {
-      let { replyMessage, posts } = req;
+      let { replyMessage, requestedPost } = req;
       await replyMessage.remove();
-      posts = await posts.save();
-      res.json({ succcess: true, posts });
+      await requestedPost.save();
+      res.json({ succcess: true, post: requestedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -370,21 +334,5 @@ router
       });
     }
   });
-
-router.route("/").get(async (req, res) => {
-  try {
-    let posts = await Post.find({}).populate({
-      path: "posts.userId",
-      select: "firstname lastname username avatar",
-    });
-    res.json({ success: true, posts });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Couldn't fetch posts",
-      errorMessage: error.message,
-    });
-  }
-});
 
 module.exports = router;
