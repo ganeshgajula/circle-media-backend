@@ -47,18 +47,46 @@ router.param("userId", async (req, res, next, id) => {
   }
 });
 
+router.param("userId", async (req, res, next, id) => {
+  try {
+    let followingUsers = await User.find({ followers: id });
+    let followersDocs = [];
+
+    await Promise.all(
+      followingUsers.map(async (user) => {
+        individualDoc = await Post.find({ userId: user._id });
+        console.log(individualDoc);
+
+        followersDocs.push(individualDoc);
+      })
+    );
+
+    // req.followingPosts = updatedFollowingPosts;
+    // req.following = followingUsers;
+    req.updatedDoc = followersDocs;
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message:
+        "Couldn't fetch posts from this user. Kindly check error message for more details.",
+      errorMessage: error.message,
+    });
+  }
+});
+
 router
   .route("/:userId")
   .get(async (req, res) => {
     try {
-      let { posts } = req;
+      let { posts, updatedDoc } = req;
       posts = await posts
         .populate({
           path: "userId posts.userId posts.replies.replierId",
           select: "firstname lastname username avatar",
         })
         .execPopulate();
-      res.json({ success: true, posts });
+      res.json({ success: true, posts, updatedDoc });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -191,7 +219,7 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
     let updatedPosts = await posts.save();
     updatedPosts = await updatedPosts
       .populate({
-        path: "posts.replies.replierId",
+        path: "posts.userId posts.replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
