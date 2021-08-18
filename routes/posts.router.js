@@ -81,7 +81,7 @@ router
 router.route("/").get(async (req, res) => {
   try {
     let posts = await Post.find({}).populate({
-      path: "userId",
+      path: "userId replies.replierId",
       select: "firstname lastname username avatar",
     });
     res.json({ success: true, posts });
@@ -97,12 +97,12 @@ router.route("/").get(async (req, res) => {
 router.param("postId", async (req, res, next, id) => {
   try {
     const posts = await Post.find({}).populate({
-      path: "userId",
+      path: "userId replies.replierId",
       select: "firstname lastname username avatar",
     });
 
     const matchedPost = await Post.findById(id).populate({
-      path: "userId",
+      path: "userId replies.replierId",
       select: "firstname lastname username avatar",
     });
 
@@ -258,7 +258,7 @@ router.route("/:userId/:postId/replies").post(async (req, res) => {
     let newReply = req.body;
     requestedPost.replies.push({
       replierId: newReply.replierId,
-      content: newReply.message,
+      content: newReply.content,
       date: new Date().toISOString(),
     });
     let repliedToPost = await requestedPost.save();
