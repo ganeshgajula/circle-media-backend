@@ -68,7 +68,7 @@ router
           select: "firstname lastname username avatar",
         })
         .execPopulate();
-      res.status(200).json({ success: true, posts: savedPost });
+      res.status(200).json({ success: true, post: savedPost });
     } catch (error) {
       res.status(500).json({
         success: false,
