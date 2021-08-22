@@ -260,6 +260,7 @@ router.route("/:userId/:postId/replies").post(async (req, res) => {
       replierId: newReply.replierId,
       content: newReply.content,
       date: new Date().toISOString(),
+      isActive: true,
     });
     let repliedToPost = await requestedPost.save();
     repliedToPost = await repliedToPost

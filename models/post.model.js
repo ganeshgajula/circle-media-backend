@@ -14,6 +14,7 @@ const PostSchema = new Schema(
         replierId: { type: Schema.Types.ObjectId, ref: "User" },
         content: String,
         date: String,
+        isActive: Boolean,
       },
     ],
   },
