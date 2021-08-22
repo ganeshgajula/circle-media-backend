@@ -88,9 +88,9 @@ router.route("/").get(async (req, res) => {
   }
 });
 
-router.param("email", async (req, res, next, email) => {
+router.param("username", async (req, res, next, username) => {
   try {
-    const user = await User.findOne({ email }).select("-password");
+    const user = await User.findOne({ username }).select("-password");
     if (!user) {
       return res
         .status(404)
@@ -102,14 +102,14 @@ router.param("email", async (req, res, next, email) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "No user found with this email",
+      message: "No user found with this username",
       errorMessage: error.message,
     });
   }
 });
 
 router
-  .route("/:email")
+  .route("/:username")
   .get(async (req, res) => {
     try {
       const { user } = req;
@@ -140,7 +140,7 @@ router
     }
   });
 
-router.route("/:email/followunfollow").post(async (req, res) => {
+router.route("/:username/followunfollow").post(async (req, res) => {
   try {
     let { user } = req;
     let userUpdates = req.body;
