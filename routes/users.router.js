@@ -128,8 +128,8 @@ router
       let { user } = req;
       const userUpdates = req.body;
       user = extend(user, userUpdates);
-      const updatedUserDetails = await user.save();
-      res.status(200).json({ success: true, updatedUserDetails });
+      const updatedUser = await user.save();
+      res.status(200).json({ success: true, updatedUser });
     } catch (error) {
       res.status(500).json({
         success: false,
