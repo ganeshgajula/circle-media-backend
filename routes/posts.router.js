@@ -33,7 +33,7 @@ router
     try {
       let { user } = req;
       const userPosts = await Post.find({ userId: user._id }).populate({
-        path: "userId",
+        path: "userId likedBy retweetedBy",
         select: "firstname lastname username avatar",
       });
       res.json({ success: true, posts: userPosts });
@@ -81,7 +81,7 @@ router
 router.route("/").get(async (req, res) => {
   try {
     let posts = await Post.find({}).populate({
-      path: "userId replies.replierId",
+      path: "userId likedBy retweetedBy replies.replierId",
       select: "firstname lastname username avatar",
     });
     res.json({ success: true, posts });
@@ -97,12 +97,12 @@ router.route("/").get(async (req, res) => {
 router.param("postId", async (req, res, next, id) => {
   try {
     const posts = await Post.find({}).populate({
-      path: "userId replies.replierId",
+      path: "userId likedBy retweetedBy replies.replierId",
       select: "firstname lastname username avatar",
     });
 
     const matchedPost = await Post.findById(id).populate({
-      path: "userId replies.replierId",
+      path: "userId likedBy retweetedBy replies.replierId",
       select: "firstname lastname username avatar",
     });
 
@@ -175,7 +175,7 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
     let { requestedPost } = req;
     const likeUpdates = req.body;
     const likedByUserIndex = requestedPost.likedBy.findIndex(
-      (userId) => String(userId) === String(likeUpdates.likedByUserId)
+      (user) => String(user._id) === String(likeUpdates.likedByUserId)
     );
     likedByUserIndex !== -1
       ? requestedPost.likedBy.splice(likedByUserIndex, 1)
@@ -183,7 +183,7 @@ router.route("/:userId/:postId/likes").post(async (req, res) => {
     let likedPost = await requestedPost.save();
     likedPost = await likedPost
       .populate({
-        path: "replies.replierId",
+        path: "likedBy retweetedBy replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
@@ -202,7 +202,7 @@ router.route("/:userId/:postId/retweets").post(async (req, res) => {
     let { requestedPost } = req;
     const retweetUpdates = req.body;
     const retweetedByUserIndex = requestedPost.retweetedBy.findIndex(
-      (userId) => String(userId) === String(retweetUpdates.retweetedByUserId)
+      (user) => String(user._id) === String(retweetUpdates.retweetedByUserId)
     );
     retweetedByUserIndex !== -1
       ? requestedPost.retweetedBy.splice(retweetedByUserIndex, 1)
@@ -210,7 +210,7 @@ router.route("/:userId/:postId/retweets").post(async (req, res) => {
     let retweetedPost = await requestedPost.save();
     retweetedPost = await retweetedPost
       .populate({
-        path: "replies.replierId",
+        path: "likedBy retweetedBy replies.replierId",
         select: "firstname lastname username avatar",
       })
       .execPopulate();
