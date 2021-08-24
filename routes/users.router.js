@@ -77,7 +77,10 @@ router.route("/authenticate").post(async (req, res) => {
 
 router.route("/").get(async (req, res) => {
   try {
-    const users = await User.find({}).select("-password");
+    const users = await User.find({})
+      .select("-password")
+      .populate({ path: "following followers" });
+
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({
@@ -90,7 +93,9 @@ router.route("/").get(async (req, res) => {
 
 router.param("username", async (req, res, next, username) => {
   try {
-    const user = await User.findOne({ username }).select("-password");
+    const user = await User.findOne({ username })
+      .select("-password")
+      .populate({ path: "following followers" });
     if (!user) {
       return res
         .status(404)
@@ -152,6 +157,10 @@ router.route("/:username/followunfollow").post(async (req, res) => {
       : user.followers.push(userUpdates.userId);
 
     let followedToUser = await user.save();
+    followedToUser = await followedToUser
+      .populate({ path: "following followers" })
+      .execPopulate();
+
     let followedByUser = await User.findById(userUpdates.userId);
 
     const isFollowingByIndex = followedByUser.following.findIndex(
@@ -161,6 +170,9 @@ router.route("/:username/followunfollow").post(async (req, res) => {
       ? followedByUser.following.splice(isFollowingByIndex, 1)
       : followedByUser.following.push(user._id);
     followedByUser = await followedByUser.save();
+    followedByUser = await followedByUser
+      .populate({ path: "following followers" })
+      .execPopulate();
 
     res.status(200).json({ success: true, followedToUser, followedByUser });
   } catch (error) {
