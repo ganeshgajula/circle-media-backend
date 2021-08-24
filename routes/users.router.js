@@ -150,7 +150,7 @@ router.route("/:username/followunfollow").post(async (req, res) => {
     let { user } = req;
     let userUpdates = req.body;
     const isFollowedByIndex = user.followers.findIndex(
-      (userId) => String(userId) === String(userUpdates.userId)
+      (user) => String(user._id) === String(userUpdates.userId)
     );
     isFollowedByIndex !== -1
       ? user.followers.splice(isFollowedByIndex, 1)
@@ -161,10 +161,12 @@ router.route("/:username/followunfollow").post(async (req, res) => {
       .populate({ path: "following followers" })
       .execPopulate();
 
-    let followedByUser = await User.findById(userUpdates.userId);
+    let followedByUser = await User.findById(userUpdates.userId).populate({
+      path: "following followers",
+    });
 
     const isFollowingByIndex = followedByUser.following.findIndex(
-      (userId) => String(userId) === String(user._id)
+      ({ _id }) => String(_id) === String(user._id)
     );
     isFollowingByIndex !== -1
       ? followedByUser.following.splice(isFollowingByIndex, 1)
