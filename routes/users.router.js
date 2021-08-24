@@ -50,7 +50,9 @@ router.route("/authenticate").post(async (req, res) => {
   try {
     const email = req.get("email");
     const password = req.get("password");
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate({
+      path: "following followers",
+    });
 
     if (user && user.password === password) {
       return res.status(200).json({ success: true, user });
