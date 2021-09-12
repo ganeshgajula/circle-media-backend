@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
 const { User } = require("../models/user.model");
@@ -29,6 +30,8 @@ router.route("/signup").post(async (req, res) => {
         password,
         joinedOn: new Date().toISOString(),
       });
+      const salt = await bcrypt.genSalt(10);
+      newUser.password = await bcrypt.hash(newUser.password, salt);
       const savedUser = await newUser.save();
       return res.status(201).json({ success: true, savedUser });
     }
@@ -54,19 +57,21 @@ router.route("/authenticate").post(async (req, res) => {
       path: "following followers",
     });
 
-    if (user && user.password === password) {
-      return res.status(200).json({ success: true, user });
-    } else if (!user) {
+    if (user) {
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (validPassword) {
+        return res.status(200).json({ success: true, user });
+      }
       return res.status(401).json({
         success: false,
         message:
-          "This email id is not registered with us. Kindly visit signup page and create a new account.",
+          "Invalid user credentials, please enter correct email and password",
       });
     }
     return res.status(401).json({
       success: false,
       message:
-        "Invalid user credentials, please enter correct email and password",
+        "This email id is not registered with us. Kindly visit signup page and create a new account.",
     });
   } catch (error) {
     res.status(500).json({
