@@ -6,6 +6,7 @@ const posts = require("./routes/posts.router");
 const initializeDbConnection = require("./db/db.connect");
 const { errorHandler } = require("./middlewares/errorHandler");
 const { routeHandler } = require("./middlewares/routeHandler");
+const { authVerify } = require("./middlewares/authVerify");
 
 const app = express();
 app.use(express.json());
@@ -14,8 +15,8 @@ app.use(cors());
 const PORT = 4000;
 initializeDbConnection();
 
-app.use("/users", users);
-app.use("/posts", posts);
+app.use("/users", authVerify, users);
+app.use("/posts", authVerify, posts);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Circle Media");
