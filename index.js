@@ -15,7 +15,7 @@ app.use(cors());
 const PORT = 4000;
 initializeDbConnection();
 
-app.use("/users", authVerify, users);
+app.use("/users", users);
 app.use("/posts", authVerify, posts);
 
 app.get("/", (req, res) => {

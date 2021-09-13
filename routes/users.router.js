@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const { User } = require("../models/user.model");
 const { extend } = require("lodash");
+const { authVerify } = require("../middlewares/authVerify");
 
 router.route("/signup").post(async (req, res) => {
   try {
@@ -67,7 +68,7 @@ router.route("/authenticate").post(async (req, res) => {
         return res.status(200).json({
           success: true,
           user,
-          token,
+          token: `Bearer ${token}`,
         });
       }
       return res.status(401).json({
@@ -89,6 +90,8 @@ router.route("/authenticate").post(async (req, res) => {
     });
   }
 });
+
+router.use(authVerify);
 
 router.route("/").get(async (req, res) => {
   try {
