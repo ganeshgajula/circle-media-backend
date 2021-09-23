@@ -206,46 +206,62 @@ router.route("/:username/followunfollow").post(async (req, res) => {
   }
 });
 
-router.route("/:username/notifications").post(async (req, res) => {
-  try {
-    let { user } = req;
-    let { originatorUserId, type, postId } = req.body;
+router
+  .route("/:username/notifications")
+  .get(async (req, res) => {
+    try {
+      let { user } = req;
+      res.json({ success: true, notifications: user.notifications });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Couldn't get user notifications",
+        errorMessage: error.message,
+      });
+    }
+  })
+  .post(async (req, res) => {
+    try {
+      let { user } = req;
+      let { originatorUserId, type, postId } = req.body;
 
-    const notificationIndex = user.notifications.findIndex(
-      ({
-        originatorUserId: { _id },
-        type: notifiedType,
-        postId: { _id: postID },
-      }) =>
-        String(_id) === originatorUserId &&
-        notifiedType === type &&
-        String(postID) === postId
-    );
+      const notificationIndex = user.notifications.findIndex(
+        ({
+          originatorUserId: { _id },
+          type: notifiedType,
+          postId: { _id: postID },
+        }) =>
+          String(_id) === originatorUserId &&
+          notifiedType === type &&
+          String(postID) === postId
+      );
 
-    notificationIndex !== -1
-      ? user.notifications.splice(notificationIndex, 1)
-      : user.notifications.push({
-          originatorUserId,
-          type,
-          postId,
-        });
+      notificationIndex !== -1
+        ? user.notifications.splice(notificationIndex, 1)
+        : user.notifications.push({
+            originatorUserId,
+            type,
+            postId,
+          });
 
-    let updatedUser = await user.save();
-    updatedUser = await updatedUser
-      .populate({
-        path: "notifications.originatorUserId notifications.postId",
-        select: "firstname lastname username content",
-      })
-      .execPopulate();
+      let updatedUser = await user.save();
+      updatedUser = await updatedUser
+        .populate({
+          path: "notifications.originatorUserId notifications.postId",
+          select: "firstname lastname username content",
+        })
+        .execPopulate();
 
-    res.status(200).json({ success: true, user });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong, kindly check the error message",
-      errorMessage: error.message,
-    });
-  }
-});
+      res
+        .status(200)
+        .json({ success: true, notifications: user.notifications });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Something went wrong, kindly check the error message",
+        errorMessage: error.message,
+      });
+    }
+  });
 
 module.exports = router;
