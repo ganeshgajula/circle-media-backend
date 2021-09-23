@@ -91,7 +91,7 @@ router.route("/authenticate").post(async (req, res) => {
   }
 });
 
-// router.use(authVerify);
+router.use(authVerify);
 
 router.route("/").get(async (req, res) => {
   try {
@@ -228,6 +228,7 @@ router.route("/:username/notifications").post(async (req, res) => {
           originatorUserId,
           type,
           postId,
+          date: new Date().toISOString(),
         });
 
     let updatedUser = await user.save();
