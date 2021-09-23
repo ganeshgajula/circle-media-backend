@@ -23,7 +23,6 @@ const UserSchema = new Schema(
     notifications: [
       {
         originatorUserId: { type: Schema.Types.ObjectId, ref: "User" },
-        receiverUserId: { type: Schema.Types.ObjectId, ref: "User" },
         type: { type: String, required: "Notification type must be mentioned" },
         postId: { type: Schema.Types.ObjectId, ref: "Post" },
         date: String,
