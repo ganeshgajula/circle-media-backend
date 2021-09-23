@@ -91,7 +91,7 @@ router.route("/authenticate").post(async (req, res) => {
   }
 });
 
-router.use(authVerify);
+// router.use(authVerify);
 
 router.route("/").get(async (req, res) => {
   try {
@@ -111,9 +111,10 @@ router.route("/").get(async (req, res) => {
 
 router.param("username", async (req, res, next, username) => {
   try {
-    const user = await User.findOne({ username })
-      .select("-password")
-      .populate({ path: "following followers" });
+    const user = await User.findOne({ username }).select("-password").populate({
+      path: "following followers notifications.originatorUserId notifications.postId",
+      select: "firstname lastname username content",
+    });
     if (!user) {
       return res
         .status(404)
@@ -200,6 +201,48 @@ router.route("/:username/followunfollow").post(async (req, res) => {
       success: false,
       message:
         "Couldn't follow or unfollow user. Please try again after some time.",
+      errorMessage: error.message,
+    });
+  }
+});
+
+router.route("/:username/notifications").post(async (req, res) => {
+  try {
+    let { user } = req;
+    let { originatorUserId, type, postId } = req.body;
+
+    const notificationIndex = user.notifications.findIndex(
+      ({
+        originatorUserId: { _id },
+        type: notifiedType,
+        postId: { _id: postID },
+      }) =>
+        String(_id) === originatorUserId &&
+        notifiedType === type &&
+        String(postID) === postId
+    );
+
+    notificationIndex !== -1
+      ? user.notifications.splice(notificationIndex, 1)
+      : user.notifications.push({
+          originatorUserId,
+          type,
+          postId,
+        });
+
+    let updatedUser = await user.save();
+    updatedUser = await updatedUser
+      .populate({
+        path: "notifications.originatorUserId notifications.postId",
+        select: "firstname lastname username content",
+      })
+      .execPopulate();
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong, kindly check the error message",
       errorMessage: error.message,
     });
   }
