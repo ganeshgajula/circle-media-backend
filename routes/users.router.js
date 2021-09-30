@@ -212,14 +212,10 @@ router.route("/:username/notifications").post(async (req, res) => {
     let { originatorUserId, type, postId } = req.body;
 
     const notificationIndex = user.notifications.findIndex(
-      ({
-        originatorUserId: { _id },
-        type: notifiedType,
-        postId: { _id: postID },
-      }) =>
+      ({ originatorUserId: { _id }, type: notifiedType, postId: postID }) =>
         String(_id) === originatorUserId &&
         notifiedType === type &&
-        String(postID) === postId
+        String(postID?._id) === postId
     );
 
     notificationIndex !== -1
