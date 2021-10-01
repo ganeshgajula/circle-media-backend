@@ -171,13 +171,34 @@ router.route("/:username/followunfollow").post(async (req, res) => {
     const isFollowedByIndex = user.followers.findIndex(
       (user) => String(user._id) === String(userUpdates.userId)
     );
+
+    const notificationIndex = user.notifications.findIndex(
+      ({ originatorUserId: { _id }, type }) =>
+        String(_id) === String(userUpdates.userId) && type === "Followed"
+    );
+
+    const addFollowersAndNotify = () => {
+      user.followers.push(userUpdates.userId);
+      user.notifications.push({
+        originatorUserId: userUpdates.userId,
+        type: "Followed",
+      });
+    };
+
+    const removeFollowersAndNotification = () => {
+      user.followers.splice(isFollowedByIndex, 1);
+      user.notifications.splice(notificationIndex, 1);
+    };
+
     isFollowedByIndex !== -1
-      ? user.followers.splice(isFollowedByIndex, 1)
-      : user.followers.push(userUpdates.userId);
+      ? removeFollowersAndNotification()
+      : addFollowersAndNotify();
 
     let followedToUser = await user.save();
     followedToUser = await followedToUser
-      .populate({ path: "following followers" })
+      .populate({
+        path: "following followers notifications.originatorUserId notifications.postId",
+      })
       .execPopulate();
 
     let followedByUser = await User.findById(userUpdates.userId).populate({
@@ -192,7 +213,9 @@ router.route("/:username/followunfollow").post(async (req, res) => {
       : followedByUser.following.push(user._id);
     followedByUser = await followedByUser.save();
     followedByUser = await followedByUser
-      .populate({ path: "following followers" })
+      .populate({
+        path: "following followers notifications.originatorUserId notifications.postId",
+      })
       .execPopulate();
 
     res.status(200).json({ success: true, followedToUser, followedByUser });
@@ -218,24 +241,14 @@ router.route("/:username/notifications").post(async (req, res) => {
         String(postID?._id) === postId
     );
 
-    const isFollowedNotified = user.notifications.findIndex(
-      ({ originatorUserId: { _id }, type: notifiedType }) =>
-        String(_id) === originatorUserId && notifiedType === type
-    );
-
-    const addAndRemoveNotification = (notificationIndex) =>
-      notificationIndex !== -1
-        ? user.notifications.splice(notificationIndex, 1)
-        : user.notifications.push({
-            originatorUserId,
-            type,
-            postId,
-            date: new Date().toISOString(),
-          });
-
-    isFollowedNotified !== -1 && type === "Followed"
-      ? user.notifications.splice(isFollowedNotified, 1)
-      : addAndRemoveNotification(notificationIndex);
+    notificationIndex !== -1
+      ? user.notifications.splice(notificationIndex, 1)
+      : user.notifications.push({
+          originatorUserId,
+          type,
+          postId,
+          date: new Date().toISOString(),
+        });
 
     let updatedUser = await user.save();
     updatedUser = await updatedUser
