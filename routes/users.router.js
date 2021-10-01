@@ -218,14 +218,24 @@ router.route("/:username/notifications").post(async (req, res) => {
         String(postID?._id) === postId
     );
 
-    notificationIndex !== -1
-      ? user.notifications.splice(notificationIndex, 1)
-      : user.notifications.push({
-          originatorUserId,
-          type,
-          postId,
-          date: new Date().toISOString(),
-        });
+    const isFollowedNotified = user.notifications.findIndex(
+      ({ originatorUserId: { _id }, type: notifiedType }) =>
+        String(_id) === originatorUserId && notifiedType === type
+    );
+
+    const addAndRemoveNotification = (notificationIndex) =>
+      notificationIndex !== -1
+        ? user.notifications.splice(notificationIndex, 1)
+        : user.notifications.push({
+            originatorUserId,
+            type,
+            postId,
+            date: new Date().toISOString(),
+          });
+
+    isFollowedNotified !== -1 && type === "Followed"
+      ? user.notifications.splice(isFollowedNotified, 1)
+      : addAndRemoveNotification(notificationIndex);
 
     let updatedUser = await user.save();
     updatedUser = await updatedUser
