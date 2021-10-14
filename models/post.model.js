@@ -5,6 +5,7 @@ const PostSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", index: true },
     content: { type: String, required: "Post content cannot be empty" },
+    media: String,
     postDate: String,
     likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     retweetedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],

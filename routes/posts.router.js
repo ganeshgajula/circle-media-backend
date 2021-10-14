@@ -3,6 +3,14 @@ const router = express.Router();
 const { extend } = require("lodash");
 const { Post } = require("../models/post.model");
 const { User } = require("../models/user.model");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+  secure: true,
+});
 
 router.param("userId", async (req, res, next, id) => {
   try {
@@ -49,17 +57,33 @@ router
   .post(async (req, res) => {
     try {
       let { user } = req;
-      const postUpdates = req.body;
+      const { postContent } = req.body;
+      let imgFile = "";
+      let imgURL = "";
 
-      const newPost = await new Post({
+      if (req.files) {
+        imgFile = req.files.postMedia;
+        const response = await cloudinary.uploader.upload(
+          imgFile.tempFilePath,
+          { resource_type: "auto" }
+        );
+        console.log(response);
+        imgURL = response.secure_url;
+      }
+
+      let newPost = await new Post({
         userId: user._id,
-        content: postUpdates.content,
+        content: postContent,
         postDate: new Date().toISOString(),
         likedBy: [],
         retweetedBy: [],
         bookmarkedBy: [],
         replies: [],
       });
+
+      if (imgURL) {
+        newPost.media = imgURL;
+      }
 
       let savedPost = await newPost.save();
       savedPost = await savedPost
