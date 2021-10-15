@@ -5,6 +5,7 @@ const router = express.Router();
 const { User } = require("../models/user.model");
 const { extend } = require("lodash");
 const { authVerify } = require("../middlewares/authVerify");
+const { cloudinary } = require("../utils/cloudinary");
 
 router.route("/signup").post(async (req, res) => {
   try {
@@ -151,7 +152,25 @@ router
     try {
       let { user } = req;
       const userUpdates = req.body;
+      let profileImgURL = "";
+
       user = extend(user, userUpdates);
+
+      if (req.files) {
+        let profileImg = req.files.avatar;
+        const { resource_type, type, version, public_id, format } =
+          await cloudinary.uploader.upload(profileImg.tempFilePath, {
+            resource_type: "auto",
+          });
+        const transformations = "c_fill,g_face,w_120,h_120,r_max";
+
+        profileImgURL = `https://res.cloudinary.com/${process.env.CLOUD_NAME}/${resource_type}/${type}/${transformations}/v${version}/${public_id}.${format}`;
+      }
+
+      if (profileImgURL) {
+        user.avatar = profileImgURL;
+      }
+
       const updatedUser = await user.save();
       res.status(200).json({ success: true, updatedUser });
     } catch (error) {
