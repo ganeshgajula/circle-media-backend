@@ -114,7 +114,7 @@ router.param("username", async (req, res, next, username) => {
   try {
     const user = await User.findOne({ username }).select("-password").populate({
       path: "following followers notifications.originatorUserId notifications.postId",
-      select: "firstname lastname username content",
+      select: "firstname lastname username avatar content",
     });
     if (!user) {
       return res
@@ -273,7 +273,7 @@ router.route("/:username/notifications").post(async (req, res) => {
     updatedUser = await updatedUser
       .populate({
         path: "notifications.originatorUserId notifications.postId",
-        select: "firstname lastname username content",
+        select: "firstname lastname username avatar content",
       })
       .execPopulate();
 
